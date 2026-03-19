@@ -13,9 +13,40 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final snapshot = ref.watch(busylightSnapshotProvider);
     final statusAsync = ref.watch(busylightStatusProvider);
     final brightness = ref.watch(brightnessProvider);
     final color = ref.watch(colorProvider);
+
+    // Show loading/error based on the initial snapshot fetch
+    if (!snapshot.hasValue && !snapshot.hasError) {
+      return const Scaffold(
+        backgroundColor: Colors.black,
+        body: Center(child: CircularProgressIndicator(color: Colors.amber)),
+      );
+    }
+    if (snapshot.hasError && !statusAsync.hasValue) {
+      return Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(
+          backgroundColor: Colors.black,
+          title: const Text('BusyLight', style: TextStyle(color: Colors.white)),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.settings_outlined, color: Colors.white),
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SettingsScreen()),
+              ),
+            ),
+          ],
+        ),
+        body: _ErrorView(
+          message: snapshot.error.toString(),
+          onRetry: () => ref.invalidate(busylightSnapshotProvider),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -55,8 +86,21 @@ class _Body extends ConsumerWidget {
     required this.color,
   });
 
+  Color _statusColor() {
+    switch (status) {
+      case BusylightStatus.available: return Colors.green;
+      case BusylightStatus.away:      return Colors.orange;
+      case BusylightStatus.busy:      return Colors.red;
+      case BusylightStatus.on:        return Colors.white;
+      case BusylightStatus.off:       return Colors.grey.shade900;
+      case BusylightStatus.colored:   return color.toFlutterColor();
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final displayColor = _statusColor();
+
     return ListView(
       padding: const EdgeInsets.all(24),
       children: [
@@ -70,11 +114,11 @@ class _Body extends ConsumerWidget {
               shape: BoxShape.circle,
               color: status == BusylightStatus.off
                   ? Colors.grey.shade900
-                  : color.toFlutterColor().withOpacity(brightness),
+                  : displayColor.withOpacity(brightness),
               boxShadow: status != BusylightStatus.off
                   ? [
                       BoxShadow(
-                        color: color.toFlutterColor().withOpacity(0.5 * brightness),
+                        color: displayColor.withOpacity(0.5 * brightness),
                         blurRadius: 40,
                         spreadRadius: 8,
                       )
@@ -158,7 +202,7 @@ class _Body extends ConsumerWidget {
         // Refresh
         Center(
           child: TextButton.icon(
-            onPressed: () => ref.read(busylightStatusProvider.notifier).refresh(),
+            onPressed: () => ref.invalidate(busylightSnapshotProvider),
             icon: const Icon(Icons.refresh, size: 16),
             label: const Text('Refresh status'),
             style: TextButton.styleFrom(foregroundColor: Colors.grey),
@@ -194,6 +238,7 @@ class _Body extends ConsumerWidget {
                 BusylightColor.fromFlutterColor(pickerColor,
                     brightness: ref.read(brightnessProvider)),
               );
+              ref.read(busylightStatusProvider.notifier).setLocalStatus(BusylightStatus.colored);
               Navigator.pop(ctx);
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.amber),
@@ -229,6 +274,24 @@ class _ErrorView extends StatelessWidget {
 
   const _ErrorView({required this.message, required this.onRetry});
 
+  String get _friendlyMessage {
+    const hint = '\nAlso double-check the device address in ⚙ Settings.';
+    final m = message.toLowerCase();
+    if (m.contains('socket') || m.contains('network') || m.contains('connection refused')) {
+      return 'Make sure your BusyLight is powered on and connected to the same Wi-Fi network.$hint';
+    }
+    if (m.contains('timeout')) {
+      return 'Connection timed out. Your BusyLight may be out of range or busy.$hint';
+    }
+    if (m.contains('404') || m.contains('not found')) {
+      return 'BusyLight was reached but returned an unexpected response.$hint';
+    }
+    if (m.contains('host') || m.contains('lookup')) {
+      return 'Could not find your BusyLight on the network.$hint';
+    }
+    return 'Could not connect to your BusyLight.$hint';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Center(
@@ -245,8 +308,8 @@ class _ErrorView extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              message,
-              style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+              _friendlyMessage,
+              style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),

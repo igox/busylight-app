@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../../../models/busylight_color.dart';
-import '../../../models/busylight_status.dart';
+import '../models/busylight_color.dart';
+import '../models/busylight_status.dart';
 
 class BusylightException implements Exception {
   final String message;
@@ -87,11 +87,7 @@ class BusylightService {
   }
 
   // ── Brightness ──────────────────────────────────────────────────────────────
-
-  Future<double> getBrightness() async {
-    final json = await _get('/api/brightness');
-    return (json['brightness'] as num).toDouble();
-  }
+  // Note: brightness is read from GET /api/color response, no separate endpoint needed.
 
   Future<void> setBrightness(double brightness) async {
     await _post('/api/brightness', {'brightness': brightness.clamp(0.0, 1.0)});

@@ -14,11 +14,13 @@ class BusylightColor {
   });
 
   factory BusylightColor.fromJson(Map<String, dynamic> json) {
+    // GET /api/color returns { "colors": { r, g, b }, "brightness": 0.3 }
+    final colors = json['colors'] as Map<String, dynamic>? ?? json;
     return BusylightColor(
-      r: (json['r'] as num).toInt(),
-      g: (json['g'] as num).toInt(),
-      b: (json['b'] as num).toInt(),
-      brightness: (json['brightness'] as num?)?.toDouble() ?? 1.0,
+      r: (colors['r'] as num?)?.toInt() ?? 0,
+      g: (colors['g'] as num?)?.toInt() ?? 0,
+      b: (colors['b'] as num?)?.toInt() ?? 0,
+      brightness: (json['brightness'] as num?)?.toDouble() ?? 0.3,
     );
   }
 

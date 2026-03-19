@@ -25,11 +25,42 @@ final busylightServiceProvider = Provider<BusylightService>((ref) {
   return BusylightService(baseUrl: host);
 });
 
+// ── Startup snapshot ─────────────────────────────────────────────────────────
+// Loads status + color (which includes brightness) in 2 parallel calls.
+// No separate GET /api/brightness needed — the color response already has it.
+
+class BusylightSnapshot {
+  final BusylightStatus status;
+  final BusylightColor color;
+
+  const BusylightSnapshot({
+    required this.status,
+    required this.color,
+  });
+
+  double get brightness => color.brightness;
+}
+
+final busylightSnapshotProvider = FutureProvider<BusylightSnapshot>((ref) async {
+  final service = ref.watch(busylightServiceProvider);
+  final results = await Future.wait([
+    service.getStatus(),
+    service.getColor(),
+  ]);
+  return BusylightSnapshot(
+    status: results[0] as BusylightStatus,
+    color:  results[1] as BusylightColor,
+  );
+});
+
 // ── State notifiers ──────────────────────────────────────────────────────────
 
 class BusylightStateNotifier extends StateNotifier<AsyncValue<BusylightStatus>> {
-  BusylightStateNotifier(this._service) : super(const AsyncValue.loading()) {
-    refresh();
+  BusylightStateNotifier(this._service, BusylightStatus? initial)
+      : super(initial != null
+            ? AsyncValue.data(initial)
+            : const AsyncValue.loading()) {
+    if (initial == null) refresh();
   }
 
   final BusylightService _service;
@@ -43,26 +74,29 @@ class BusylightStateNotifier extends StateNotifier<AsyncValue<BusylightStatus>> 
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() => _service.setStatus(status));
   }
+
+  /// Update state locally without making an API call (e.g. for `colored`)
+  void setLocalStatus(BusylightStatus status) {
+    state = AsyncValue.data(status);
+  }
 }
 
 final busylightStatusProvider =
     StateNotifierProvider<BusylightStateNotifier, AsyncValue<BusylightStatus>>(
-  (ref) => BusylightStateNotifier(ref.watch(busylightServiceProvider)),
+  (ref) {
+    final snapshot = ref.watch(busylightSnapshotProvider).valueOrNull;
+    return BusylightStateNotifier(
+      ref.watch(busylightServiceProvider),
+      snapshot?.status,
+    );
+  },
 );
 
 // ── Brightness ───────────────────────────────────────────────────────────────
 
 class BrightnessNotifier extends StateNotifier<double> {
-  BrightnessNotifier(this._service) : super(1.0) {
-    _load();
-  }
+  BrightnessNotifier(this._service, double initial) : super(initial);
   final BusylightService _service;
-
-  Future<void> _load() async {
-    try {
-      state = await _service.getBrightness();
-    } catch (_) {}
-  }
 
   Future<void> set(double value) async {
     state = value;
@@ -71,22 +105,20 @@ class BrightnessNotifier extends StateNotifier<double> {
 }
 
 final brightnessProvider = StateNotifierProvider<BrightnessNotifier, double>(
-  (ref) => BrightnessNotifier(ref.watch(busylightServiceProvider)),
+  (ref) {
+    final snapshot = ref.watch(busylightSnapshotProvider).valueOrNull;
+    return BrightnessNotifier(
+      ref.watch(busylightServiceProvider),
+      snapshot?.brightness ?? 0.3,
+    );
+  },
 );
 
 // ── Color ─────────────────────────────────────────────────────────────────────
 
 class ColorNotifier extends StateNotifier<BusylightColor> {
-  ColorNotifier(this._service) : super(BusylightColor.white) {
-    _load();
-  }
+  ColorNotifier(this._service, BusylightColor initial) : super(initial);
   final BusylightService _service;
-
-  Future<void> _load() async {
-    try {
-      state = await _service.getColor();
-    } catch (_) {}
-  }
 
   Future<void> set(BusylightColor color) async {
     state = color;
@@ -95,5 +127,11 @@ class ColorNotifier extends StateNotifier<BusylightColor> {
 }
 
 final colorProvider = StateNotifierProvider<ColorNotifier, BusylightColor>(
-  (ref) => ColorNotifier(ref.watch(busylightServiceProvider)),
+  (ref) {
+    final snapshot = ref.watch(busylightSnapshotProvider).valueOrNull;
+    return ColorNotifier(
+      ref.watch(busylightServiceProvider),
+      snapshot?.color ?? BusylightColor.white,
+    );
+  },
 );
