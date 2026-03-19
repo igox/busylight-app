@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../models/busylight_color.dart';
-import '../models/busylight_status.dart';
+import '../../../models/busylight_color.dart';
+import '../../../models/busylight_status.dart';
 
 class BusylightException implements Exception {
   final String message;

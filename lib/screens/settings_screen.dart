@@ -92,7 +92,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
-                child: const Text('Save', fontWeight: FontWeight.w600),
+                child: const Text('Save', style: TextStyle(fontWeight: FontWeight.w600)),
               ),
             ),
           ],
