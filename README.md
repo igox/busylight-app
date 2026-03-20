@@ -8,7 +8,7 @@ Supports **iOS**, **macOS**, and **Android**.
 
 ## Screenshots (iOS)
 
-<img src="assets/ios-screenshot-main.png" width="300" alt="BusyLight Companion — main screen" /> <img src="assets/ios-screenshot-config.png" width="300" alt="BusyLight Companion — settings" />
+<img src="doc/screenshots/ios-screenshot-main.png" width="300" alt="BusyLight Companion — main screen" /> <img src="doc/screenshots/ios-screenshot-config.png" width="300" alt="BusyLight Companion — settings" />
 
 ---
 
