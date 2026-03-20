@@ -48,3 +48,4 @@ app.*.map.json
 android/key.properties
 windows/installer/*
 bugreport*
+!downloads/*
