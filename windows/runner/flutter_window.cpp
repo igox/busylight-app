@@ -1,3 +1,5 @@
+#include "flutter_window.h"
+
 #include <flutter/method_channel.h>
 #include <flutter/standard_method_codec.h>
 #include <windows.h>
@@ -29,7 +31,7 @@ static void SetAutostartEnabled(bool enabled) {
     GetModuleFileName(nullptr, path, MAX_PATH);
     RegSetValueEx(key, kAppName, 0, REG_SZ,
                   reinterpret_cast<const BYTE*>(path),
-                  (wcslen(path) + 1) * sizeof(wchar_t));
+                  static_cast<DWORD>((wcslen(path) + 1) * sizeof(wchar_t)));
   } else {
     RegDeleteValue(key, kAppName);
   }
