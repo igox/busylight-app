@@ -20,17 +20,16 @@ Supports **iOS**, **macOS**, and **Android**.
 - Status label displayed below the preview circle
 
 ### Custom color presets
-- Color picker (RGB mode only — Alpha and other modes hidden, unsupported by API)
+- Color picker
 - **Save & Apply** — pick a color, name it, save as a reusable preset and apply to device
 - **Apply only** — apply color without saving
 - Custom preset chips displayed in a horizontal scrollable row
 - Overflow indicator: fade + arrow + `· +N more` counter when presets overflow
 - Long press on a preset chip to **Edit** (color + name) or **Delete**
 - Edit mode updates the preset locally without applying to the BusyLight
-- Presets persisted locally via SharedPreferences
 
 ### Brightness
-- Brightness slider (0–100%), sourced from `GET /api/color` response (no separate API call)
+- Brightness slider (0–100%)
 
 ### Background polling
 - Automatically pulls status + color from device at a configurable interval
@@ -44,8 +43,6 @@ Supports **iOS**, **macOS**, and **Android**.
 ### UX & feedback
 - Loading spinner per button during API calls (no full-screen takeover)
 - User-friendly error screen with collapsible technical details
-- Settings gear icon accessible from error screen
-- All section titles use sentence case with consistent bold style
 
 ---
 
@@ -86,7 +83,7 @@ busylight_app/
 │   │   └── presets_provider.dart      # Custom color presets (CRUD + persistence)
 │   ├── screens/
 │   │   ├── home_screen.dart           # Main screen
-│   │   └── settings_screen.dart      # Device address + polling interval
+│   │   └── settings_screen.dart       # Configuration screen
 │   └── widgets/
 │       ├── status_button.dart         # Animated status button with pending spinner
 │       └── brightness_slider.dart     # Brightness control slider
@@ -107,10 +104,6 @@ busylight_app/
 | `/api/status/off` | POST/GET | Turn off |
 | `/api/color` | GET | Get current color + brightness |
 | `/api/color` | POST | Set custom color (r, g, b, brightness) |
-| `/api/brightness` | POST | Set brightness |
-| `/api/debug` | GET | Full device debug info |
-
-> Note: `GET /api/color` returns `{ "colors": { r, g, b }, "brightness": 0.3 }` — brightness is read from this response, no separate `/api/brightness` GET call is made.
 
 ---
 
