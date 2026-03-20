@@ -51,13 +51,11 @@ android {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("release")
-            setProperty("archivesBaseName", "org.igox.apps.android.busylight-buddy")
         }
         debug {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
-            setProperty("archivesBaseName", "org.igox.apps.android.busylight-buddy.debug")
         }
     }
 }
