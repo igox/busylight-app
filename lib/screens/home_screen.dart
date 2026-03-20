@@ -205,16 +205,6 @@ class _BodyState extends ConsumerState<_Body> {
           onChanged: (v) => ref.read(brightnessProvider.notifier).set(v),
         ),
         const SizedBox(height: 40),
-
-        // Refresh
-        Center(
-          child: TextButton.icon(
-            onPressed: () => ref.invalidate(busylightSnapshotProvider),
-            icon: const Icon(Icons.refresh, size: 16),
-            label: const Text('Refresh status'),
-            style: TextButton.styleFrom(foregroundColor: Colors.grey),
-          ),
-        ),
       ],
     );
   }
@@ -254,49 +244,68 @@ class _BodyState extends ConsumerState<_Body> {
                   showParams: true,
                   showIndicator: false,
                 ),
+                const SizedBox(height: 16),
+                // Buttons stacked vertically — avoids collision on narrow macOS dialogs
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.grey,
+                        shape: const StadiumBorder(),
+                      ),
+                      child: const Text('Cancel'),
+                    ),
+                  ],
+                ),
+                if (editingPreset == null)
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton(
+                      onPressed: () {
+                        final picked = BusylightColor.fromFlutterColor(
+                          pickerColor, brightness: currentBrightness,
+                        );
+                        Navigator.pop(ctx);
+                        ref.read(colorProvider.notifier).set(picked);
+                        ref.read(busylightStatusProvider.notifier).setLocalStatus(BusylightStatus.colored);
+                      },
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        side: BorderSide(color: Colors.grey.shade600),
+                        shape: const StadiumBorder(),
+                      ),
+                      child: const Text('Apply only'),
+                    ),
+                  ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      final picked = BusylightColor.fromFlutterColor(
+                        pickerColor, brightness: currentBrightness,
+                      );
+                      Navigator.pop(ctx);
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        _openNameDialog(picked, editingPreset: editingPreset);
+                      });
+                    },
+                    icon: const Icon(Icons.bookmark_outline, size: 16, color: Colors.black),
+                    label: Text(
+                      editingPreset != null ? 'Save' : 'Save & Apply',
+                      style: const TextStyle(color: Colors.black),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.amber,
+                      shape: const StadiumBorder(),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
-            ),
-            if (editingPreset == null)
-              OutlinedButton(
-                onPressed: () {
-                  final picked = BusylightColor.fromFlutterColor(
-                    pickerColor, brightness: currentBrightness,
-                  );
-                  Navigator.pop(ctx);
-                  ref.read(colorProvider.notifier).set(picked);
-                  ref.read(busylightStatusProvider.notifier).setLocalStatus(BusylightStatus.colored);
-                },
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.white,
-                  side: BorderSide(color: Colors.grey.shade600),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                ),
-                child: const Text('Apply only'),
-              ),
-            ElevatedButton.icon(
-              onPressed: () {
-                final picked = BusylightColor.fromFlutterColor(
-                  pickerColor, brightness: currentBrightness,
-                );
-                Navigator.pop(ctx);
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  _openNameDialog(picked, editingPreset: editingPreset);
-                });
-              },
-              icon: const Icon(Icons.bookmark_outline, size: 16, color: Colors.black),
-              label: Text(
-                editingPreset != null ? 'Save' : 'Save & Apply',
-                style: const TextStyle(color: Colors.black),
-              ),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.amber),
-            ),
-          ],
         ),
       ),
     );
