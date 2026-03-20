@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/busylight_color.dart';
@@ -6,8 +7,10 @@ import '../services/busylight_service.dart';
 
 // ── Device config ────────────────────────────────────────────────────────────
 
-const _kHostKey = 'busylight_host';
-const _kDefaultHost = 'http://igox-busylight.local';
+const _kHostKey        = 'busylight_host';
+const _kDefaultHost    = 'http://igox-busylight.local';
+const _kPollIntervalKey     = 'busylight_poll_interval';
+const _kDefaultPollInterval = 5; // seconds
 
 final sharedPreferencesProvider = FutureProvider<SharedPreferences>(
   (_) => SharedPreferences.getInstance(),
@@ -16,6 +19,11 @@ final sharedPreferencesProvider = FutureProvider<SharedPreferences>(
 final deviceHostProvider = StateProvider<String>((ref) {
   final prefs = ref.watch(sharedPreferencesProvider).valueOrNull;
   return prefs?.getString(_kHostKey) ?? _kDefaultHost;
+});
+
+final pollIntervalProvider = StateProvider<int>((ref) {
+  final prefs = ref.watch(sharedPreferencesProvider).valueOrNull;
+  return prefs?.getInt(_kPollIntervalKey) ?? _kDefaultPollInterval;
 });
 
 // ── Service ──────────────────────────────────────────────────────────────────
@@ -71,8 +79,9 @@ class BusylightStateNotifier extends StateNotifier<AsyncValue<BusylightStatus>> 
   }
 
   Future<void> setStatus(BusylightStatus status) async {
-    state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() => _service.setStatus(status));
+    // Keep current value visible during the API call — no loading state
+    final result = await AsyncValue.guard(() => _service.setStatus(status));
+    state = result;
   }
 
   /// Update state locally without making an API call (e.g. for `colored`)
@@ -102,6 +111,8 @@ class BrightnessNotifier extends StateNotifier<double> {
     state = value;
     await _service.setBrightness(value);
   }
+
+  void silentSet(double value) => state = value;
 }
 
 final brightnessProvider = StateNotifierProvider<BrightnessNotifier, double>(
@@ -124,6 +135,8 @@ class ColorNotifier extends StateNotifier<BusylightColor> {
     state = color;
     await _service.setColor(color);
   }
+
+  void silentSet(BusylightColor color) => state = color;
 }
 
 final colorProvider = StateNotifierProvider<ColorNotifier, BusylightColor>(
@@ -134,4 +147,52 @@ final colorProvider = StateNotifierProvider<ColorNotifier, BusylightColor>(
       snapshot?.color ?? BusylightColor.white,
     );
   },
+);
+
+// ── Background polling ────────────────────────────────────────────────────────
+// Periodically pulls status + color from the device and silently updates state.
+
+class PollingNotifier extends StateNotifier<void> {
+  PollingNotifier(this._ref) : super(null) {
+    _start();
+  }
+
+  final Ref _ref;
+  Timer? _timer;
+
+  void _start() {
+    final interval = _ref.read(pollIntervalProvider);
+    _timer?.cancel();
+    if (interval <= 0) return;
+    _timer = Timer.periodic(Duration(seconds: interval), (_) => _poll());
+  }
+
+  void restart() => _start();
+
+  Future<void> _poll() async {
+    try {
+      final service = _ref.read(busylightServiceProvider);
+      final results = await Future.wait([
+        service.getStatus(),
+        service.getColor(),
+      ]);
+      final status = results[0] as BusylightStatus;
+      final color  = results[1] as BusylightColor;
+      _ref.read(busylightStatusProvider.notifier).setLocalStatus(status);
+      _ref.read(colorProvider.notifier).silentSet(color);
+      _ref.read(brightnessProvider.notifier).silentSet(color.brightness);
+    } catch (_) {
+      // Silently ignore poll errors — connection issues are shown on manual refresh
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+}
+
+final pollingProvider = StateNotifierProvider<PollingNotifier, void>(
+  (ref) => PollingNotifier(ref),
 );

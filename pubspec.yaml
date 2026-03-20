@@ -18,6 +18,8 @@ dependencies:
   shared_preferences: ^2.2.3
   # Color picker
   flutter_colorpicker: ^1.0.3
+  # Unique IDs for presets
+  uuid: ^4.4.0
   # Icons
   cupertino_icons: ^1.0.6
 

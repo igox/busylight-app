@@ -4,6 +4,7 @@ import '../models/busylight_status.dart';
 class StatusButton extends StatelessWidget {
   final BusylightStatus status;
   final bool isActive;
+  final bool isPending;
   final VoidCallback onTap;
 
   const StatusButton({
@@ -11,6 +12,7 @@ class StatusButton extends StatelessWidget {
     required this.status,
     required this.isActive,
     required this.onTap,
+    this.isPending = false,
   });
 
   Color get _color {
@@ -37,30 +39,40 @@ class StatusButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final activeColor = isActive || isPending ? _color : Colors.grey.shade600;
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
         decoration: BoxDecoration(
-          color: isActive ? _color.withOpacity(0.2) : Colors.transparent,
+          color: (isActive || isPending) ? _color.withOpacity(0.08) : Colors.transparent,
           border: Border.all(
-            color: isActive ? _color : Colors.grey.shade600,
-            width: isActive ? 2 : 1,
+            color: (isActive || isPending) ? _color.withOpacity(0.5) : Colors.grey.shade800,
+            width: 1.5,
           ),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(_icon, color: isActive ? _color : Colors.grey.shade400, size: 28),
-            const SizedBox(height: 6),
+            isPending
+                ? SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation(_color),
+                    ),
+                  )
+                : Icon(_icon, color: activeColor, size: 26),
+            const SizedBox(height: 7),
             Text(
               status.label,
               style: TextStyle(
-                color: isActive ? _color : Colors.grey.shade400,
-                fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-                fontSize: 13,
+                color: activeColor,
+                fontWeight: (isActive || isPending) ? FontWeight.w600 : FontWeight.w400,
+                fontSize: 12,
               ),
             ),
           ],
