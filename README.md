@@ -2,7 +2,7 @@
 
 Multiplatform Flutter app to control your DIY [BusyLight](https://github.com/igox/busylight) (ESP32 + MicroPython + Microdot).
 
-Supports **iOS**, **ipadOS**, **Android**, **macOS**, and **Windows**.
+Supports **iOS**, **ipadOS**, **macOS**, **Android**, and **Windows**.
 
 ---
 
