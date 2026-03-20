@@ -112,24 +112,29 @@ busylight_app/
 
 ## Platform setup
 
-### iOS — allow HTTP (non-HTTPS)
+### Android — build APK
 
-In `ios/Runner/Info.plist`:
-```xml
-<key>NSAppTransportSecurity</key>
-<dict>
-  <key>NSAllowsArbitraryLoads</key>
-  <true/>
-</dict>
+Two helper scripts are available at the in the  of the `android/` folder to build and rename the APK in one step — one for macOS/Linux, one for Windows.
+
+**macOS / Linux:**
+```bash
+# Debug build (default)
+./flutter-build-apk.sh
+
+# Release build
+./flutter-build-apk.sh release
 ```
 
-### macOS — allow outgoing network connections
+**Windows (PowerShell):**
+```powershell
+# Debug build (default)
+.\flutter-build-apk.ps1
 
-In both `macos/Runner/DebugProfile.entitlements` and `macos/Runner/Release.entitlements`:
-```xml
-<key>com.apple.security.network.client</key>
-<true/>
+# Release build
+.\flutter-build-apk.ps1 release
 ```
+
+Both scripts build the APK with `flutter build apk`, then rename the output from `app-<type>.apk` to `org.igox.apps.android.busylight-buddy-<type>.apk` (and its `.sha1` file if present) in `build/app/outputs/flutter-apk/`.
 
 ### Windows — build release
 
