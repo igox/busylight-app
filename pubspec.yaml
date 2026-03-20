@@ -31,7 +31,7 @@ flutter:
     - assets/icon.png
 
 flutter_launcher_icons:
-  android: false
+  android: true
   ios: true
   macos:
     generate: true
