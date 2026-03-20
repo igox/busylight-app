@@ -114,7 +114,7 @@ busylight_app/
 
 ### Android — build APK
 
-Two helper scripts are available at the in the  of the `android/` folder to build and rename the APK in one step — one for macOS/Linux, one for Windows.
+Two helper scripts are available at the in the `android/` folder to build and rename the APK in one step — one for macOS/Linux, one for Windows.
 
 **macOS / Linux:**
 ```bash
