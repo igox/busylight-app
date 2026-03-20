@@ -1,7 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../providers/busylight_provider.dart';
+import '../services/autostart_service.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -13,12 +15,19 @@ class SettingsScreen extends ConsumerStatefulWidget {
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   late TextEditingController _hostController;
   late int _pollInterval;
+  bool _startWithSession = false;
 
   @override
   void initState() {
     super.initState();
     _hostController = TextEditingController(text: ref.read(deviceHostProvider));
     _pollInterval   = ref.read(pollIntervalProvider);
+    _loadAutostart();
+  }
+
+  Future<void> _loadAutostart() async {
+    final enabled = await AutostartService.isEnabled();
+    if (mounted) setState(() => _startWithSession = enabled);
   }
 
   @override
@@ -33,9 +42,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     ref.read(deviceHostProvider.notifier).state   = host;
     ref.read(pollIntervalProvider.notifier).state = _pollInterval;
-
-    // Restart polling with new interval
     ref.read(pollingProvider.notifier).restart();
+
+    await AutostartService.setEnabled(_startWithSession);
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('busylight_host', host);
@@ -126,10 +135,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text('Off', style: TextStyle(color: Colors.grey.shade600, fontSize: 11)),
-                Text('5s', style: TextStyle(color: Colors.grey.shade600, fontSize: 11)),
+                Text('5s',  style: TextStyle(color: Colors.grey.shade600, fontSize: 11)),
                 Text('10s', style: TextStyle(color: Colors.grey.shade600, fontSize: 11)),
                 Text('30s', style: TextStyle(color: Colors.grey.shade600, fontSize: 11)),
-                Text('1m', style: TextStyle(color: Colors.grey.shade600, fontSize: 11)),
+                Text('1m',  style: TextStyle(color: Colors.grey.shade600, fontSize: 11)),
               ],
             ),
             const SizedBox(height: 6),
@@ -139,6 +148,34 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   : 'Status is pulled from the device every $_pollInterval seconds.',
               style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
             ),
+
+            // ── Start with session (macOS + Windows only) ───────────────────
+            if (AutostartService.isSupported) ...[
+              const SizedBox(height: 32),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Start with session',
+                          style: TextStyle(color: Colors.grey.shade300, fontSize: 13, fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Launch automatically at login',
+                        style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                      ),
+                    ],
+                  ),
+                  Switch(
+                    value: _startWithSession,
+                    onChanged: (v) => setState(() => _startWithSession = v),
+                    activeColor: Colors.amber,
+                  ),
+                ],
+              ),
+            ],
+
             const Spacer(),
 
             // ── Save ────────────────────────────────────────────────────────
