@@ -1,6 +1,6 @@
-NOTICE: REPOSITORY IS NOW ARCHIVED
+# NOTICE: REPOSITORY IS NOW ARCHIVED 
 
-CODE IS HOSTED @ http://code.igox.org/iGoX/busylight
+# CODE IS HOSTED @ http://code.igox.org/iGoX/busylight-buddy
 
 # BusyLight Buddy
 
